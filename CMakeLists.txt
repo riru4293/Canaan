@@ -55,7 +55,7 @@ pico_set_program_name(Canaan "Canaan")
 pico_set_program_version(Canaan "1.0.0")
 
 # Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(Canaan 0)
+pico_enable_stdio_uart(Canaan 1)
 pico_enable_stdio_usb(Canaan 0)
 
 pico_add_extra_outputs(Canaan)

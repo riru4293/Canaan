@@ -44,7 +44,9 @@
         "cstdlib": "c",
         "string_view": "c",
         "array": "c",
-        "string": "c"
+        "string": "c",
+        "random": "c",
+        "limits": "c"
     },
     "cortex-debug.variableUseNaturalFormat": false
 }
