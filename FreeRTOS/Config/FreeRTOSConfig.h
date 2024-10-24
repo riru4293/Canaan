@@ -430,6 +430,14 @@
 #define configASSERT(x) assert(x)
 
 /******************************************************************************/
+/* RP2040 specific. ***********************************************************/
+/******************************************************************************/
+#define configSUPPORT_PICO_SYNC_INTEROP 1
+#define configSUPPORT_PICO_TIME_INTEROP 1
+#define configSMP_SPINLOCK_0    PICO_SPINLOCK_ID_OS1
+#define configSMP_SPINLOCK_1    PICO_SPINLOCK_ID_OS2
+
+/******************************************************************************/
 /* FreeRTOS MPU specific definitions. *****************************************/
 /******************************************************************************/
 
@@ -511,7 +519,7 @@
 
 /* Set configNUMBER_OF_CORES to the number of available processor cores.
  * Defaults to 1 if left undefined. */
-#define configNUMBER_OF_CORES                     1
+#define configNUMBER_OF_CORES                     2
 
 /* When using SMP (i.e. configNUMBER_OF_CORES is greater than one), set
  * configRUN_MULTIPLE_PRIORITIES to 0 to allow multiple tasks to run

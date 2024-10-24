@@ -20,6 +20,8 @@ add_library(FreeRTOS STATIC
 target_link_libraries(FreeRTOS
     PRIVATE pico_stdlib
     PRIVATE pico_multicore
+    PRIVATE hardware_sync
+    PRIVATE pico_sync
     PRIVATE hardware_exception
 )
 
