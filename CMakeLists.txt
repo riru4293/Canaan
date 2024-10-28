@@ -42,20 +42,28 @@ pico_sdk_init()
 # Include the sub modules
 add_subdirectory(FreeRTOS)
 
-add_executable(Canaan main.c)
+add_executable(Canaan
+    ${CMAKE_CURRENT_SOURCE_DIR}/main.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/usb_descriptors.c
+)
 
 # Add the standard library to the build
 target_link_libraries(Canaan
     PRIVATE pico_stdlib
-    PRIVATE hardware_uart
+    PRIVATE tinyusb_device
+    PRIVATE tinyusb_board
     PRIVATE FreeRTOS
+)
+
+target_include_directories(Canaan
+    PRIVATE ${CMAKE_CURRENT_LIST_DIR}
 )
 
 pico_set_program_name(Canaan "Canaan")
 pico_set_program_version(Canaan "1.0.0")
 
 # Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(Canaan 0)
-pico_enable_stdio_usb(Canaan 0)
+pico_enable_stdio_uart(Canaan FALSE)
+pico_enable_stdio_usb(Canaan FALSE)
 
 pico_add_extra_outputs(Canaan)
