@@ -41,10 +41,10 @@
 #define CFG_TUD_VENDOR (0)
 
 /* USB-CDC FIFO size of TX and RX. */
-#define CFG_TUD_CDC_RX_BUFSIZE (64)
-#define CFG_TUD_CDC_TX_BUFSIZE (64)
+#define CFG_TUD_CDC_RX_BUFSIZE (512)
+#define CFG_TUD_CDC_TX_BUFSIZE (512)
 
 /* USB-CDC Endpoint transfer buffer size. */
-#define CFG_TUD_CDC_EP_BUFSIZE (64)
+#define CFG_TUD_CDC_EP_BUFSIZE (512)
 
 #endif /* TUSB_CONFIG_H */
