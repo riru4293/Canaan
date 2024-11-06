@@ -25,6 +25,9 @@
 #define CDC_PRIORITY (2U)
 #define CDC_STACK_SIZE (configMINIMAL_STACK_SIZE)
 
+#define CMD_RECV_PRIORITY (1U)
+#define CMD_RECV_STACK_SIZE (configMINIMAL_STACK_SIZE)
+
 /* -------------------------------------------------------------------------- */
 /* Type definition                                                            */
 /* -------------------------------------------------------------------------- */
@@ -35,6 +38,7 @@
 static void heartbeatTask(void *nouse);
 static void usbdTask(void *nouse);
 static void cdcTask(void *nouse);
+static void cmdRecvTask(void *nouse);
 
 /* -------------------------------------------------------------------------- */
 /* Global                                                                     */
@@ -42,14 +46,17 @@ static void cdcTask(void *nouse);
 static TaskHandle_t gHbTaskHndl = NULL;
 static TaskHandle_t gUsbdTaskHndl = NULL;
 static TaskHandle_t gCdcTaskHndl = NULL;
+static TaskHandle_t gCmdRecvHndl = NULL;
 
 static StaticTask_t gHbTaskDef;
 static StaticTask_t gUsbdTaskDef;
 static StaticTask_t gCdcTaskDef;
+static StaticTask_t gCmdRecvDef;
 
 static StackType_t gHbStack[HEARTBEAT_STACK_SIZE];
 static StackType_t gUsbdStack[USBD_STACK_SIZE];
 static StackType_t gCdcStack[CDC_STACK_SIZE];
+static StackType_t gCmdRecvStack[CMD_RECV_STACK_SIZE];
 
 /* -------------------------------------------------------------------------- */
 /* Public function                                                            */
@@ -72,6 +79,9 @@ int main(void)
 
     gCdcTaskHndl = xTaskCreateStatic(cdcTask, "cdc", CDC_STACK_SIZE,
                                      NULL, CDC_PRIORITY, gCdcStack, &gCdcTaskDef);
+
+    gCmdRecvHndl = xTaskCreateStatic(cmdRecvTask, "cmdRecv", CMD_RECV_STACK_SIZE,
+                                     NULL, CMD_RECV_PRIORITY, gCmdRecvStack, &gCmdRecvDef);
 
     /* Start task scheduking. */
     vTaskStartScheduler();
@@ -150,6 +160,14 @@ static void cdcTask(void *nouse)
             tud_cdc_write_flush();
         }
 
+        vTaskDelay(1);
+    }
+}
+
+static void cmdRecvTask(void *nouse)
+{
+    while (true)
+    {
         vTaskDelay(1);
     }
 }
