@@ -17,20 +17,21 @@
 #define LED_PORT (25U)
 
 #define HEARTBEAT_PRIORITY (1U)
-#define HEARTBEAT_STACK_SIZE (configMINIMAL_STACK_SIZE)
-#define HEARTBEAT_INTERVAL_MS (250U)
+#define HEARTBEAT_STACK_LEN (configMINIMAL_STACK_SIZE)
+#define HEARTBEAT_PERIOD_MS (250U)
 
 #define USBD_PRIORITY (3U)
-#define USBD_STACK_SIZE (3 * configMINIMAL_STACK_SIZE / 2) * (CFG_TUSB_DEBUG ? 2 : 1)
+#define USBD_STACK_LEN (3 * configMINIMAL_STACK_SIZE / 2) * (CFG_TUSB_DEBUG ? 2 : 1)
 
 #define CDC_PRIORITY (2U)
-#define CDC_STACK_SIZE (configMINIMAL_STACK_SIZE)
+#define CDC_STACK_LEN (configMINIMAL_STACK_SIZE)
+#define CDC_RECV_LEN (64U)
 
 #define CMD_RECV_PRIORITY (1U)
-#define CMD_RECV_STACK_SIZE (configMINIMAL_STACK_SIZE)
+#define CMD_RECV_STACK_LEN (configMINIMAL_STACK_SIZE)
 
-#define UART_RECV_BUFF_LENGTH ((size_t)100)
-#define UART_RECV_BUFF_TRIGGER_LEVEL ((BaseType_t)1)
+#define UART_RECV_BUFF_LEN (1024U)
+#define UART_RECV_BUFF_TRIGGER_LV (1U)
 
 #define NO_DELAY (0U)
 
@@ -59,10 +60,10 @@ static StaticTask_t gUsbdTaskDef;
 static StaticTask_t gCdcTaskDef;
 static StaticTask_t gCmdRecvDef;
 
-static StackType_t gHbStack[HEARTBEAT_STACK_SIZE];
-static StackType_t gUsbdStack[USBD_STACK_SIZE];
-static StackType_t gCdcStack[CDC_STACK_SIZE];
-static StackType_t gCmdRecvStack[CMD_RECV_STACK_SIZE];
+static StackType_t gHbStack[HEARTBEAT_STACK_LEN];
+static StackType_t gUsbdStack[USBD_STACK_LEN];
+static StackType_t gCdcStack[CDC_STACK_LEN];
+static StackType_t gCmdRecvStack[CMD_RECV_STACK_LEN];
 
 static StreamBufferHandle_t gUartRecvBuff = NULL;
 
@@ -79,21 +80,20 @@ int main(void)
     gpio_set_dir(LED_PORT, GPIO_OUT);
 
     /* Initialize UART recv buffer. */
-    gUartRecvBuff = xStreamBufferCreate(UART_RECV_BUFF_LENGTH,
-                                        UART_RECV_BUFF_TRIGGER_LEVEL);
+    gUartRecvBuff = xStreamBufferCreate(UART_RECV_BUFF_LEN, UART_RECV_BUFF_TRIGGER_LV);
 
     /* Creates a tasks. */
-    gHbTaskHndl = xTaskCreateStatic(heartbeatTask, "hb", HEARTBEAT_STACK_SIZE,
-                                    NULL, HEARTBEAT_PRIORITY, gHbStack, &gHbTaskDef);
+    gHbTaskHndl = xTaskCreateStatic(heartbeatTask, "hb", HEARTBEAT_STACK_LEN, NULL,
+                                    HEARTBEAT_PRIORITY, gHbStack, &gHbTaskDef);
 
-    gUsbdTaskHndl = xTaskCreateStatic(usbdTask, "usbd", USBD_STACK_SIZE,
-                                      NULL, USBD_PRIORITY, gUsbdStack, &gUsbdTaskDef);
+    gUsbdTaskHndl = xTaskCreateStatic(usbdTask, "usbd", USBD_STACK_LEN, NULL,
+                                      USBD_PRIORITY, gUsbdStack, &gUsbdTaskDef);
 
-    gCdcTaskHndl = xTaskCreateStatic(cdcTask, "cdc", CDC_STACK_SIZE,
-                                     NULL, CDC_PRIORITY, gCdcStack, &gCdcTaskDef);
+    gCdcTaskHndl = xTaskCreateStatic(cdcTask, "cdc", CDC_STACK_LEN, NULL,
+                                     CDC_PRIORITY, gCdcStack, &gCdcTaskDef);
 
-    gCmdRecvHndl = xTaskCreateStatic(cmdRecvTask, "cmdRecv", CMD_RECV_STACK_SIZE,
-                                     NULL, CMD_RECV_PRIORITY, gCmdRecvStack, &gCmdRecvDef);
+    gCmdRecvHndl = xTaskCreateStatic(cmdRecvTask, "cmdRecv", CMD_RECV_STACK_LEN, NULL,
+                                     CMD_RECV_PRIORITY, gCmdRecvStack, &gCmdRecvDef);
 
     /* Start task scheduking. */
     vTaskStartScheduler();
@@ -120,7 +120,7 @@ static void heartbeatTask(void *nouse)
         gpio_put(LED_PORT, isLit);
 
         /* Delay 500ms */
-        vTaskDelay(HEARTBEAT_INTERVAL_MS);
+        vTaskDelay(HEARTBEAT_PERIOD_MS);
     }
 }
 
@@ -159,16 +159,15 @@ static void cdcTask(void *nouse)
             /* There are data available. */
             while (tud_cdc_available())
             {
-                uint8_t buff[64];
+                uint8_t buff[CDC_RECV_LEN];
 
                 /* Read a characters. */
-                uint32_t count = tud_cdc_read(buff, sizeof(buff));
-                (void)count;
+                uint32_t n = tud_cdc_read(buff, CDC_RECV_LEN);
 
-                xStreamBufferSend(gUartRecvBuff, buff, count, NO_DELAY);
+                xStreamBufferSend(gUartRecvBuff, buff, n, NO_DELAY);
 
                 /* Echo back. */
-                // tud_cdc_write(buff, count);
+                // tud_cdc_write(buff, n);
             }
 
             // tud_cdc_write_flush();
@@ -183,7 +182,7 @@ static void cmdRecvTask(void *nouse)
     while (true)
     {
         uint8_t b;
-        xStreamBufferReceive(gUartRecvBuff, &b, 1, portMAX_DELAY );
+        xStreamBufferReceive(gUartRecvBuff, &b, 1, portMAX_DELAY);
         tud_cdc_write(&b, 1);
         tud_cdc_write_flush();
     }
