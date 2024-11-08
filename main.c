@@ -9,6 +9,7 @@
 #include <semphr.h>
 #include <queue.h>
 #include <timers.h>
+#include <stream_buffer.h>
 
 /* -------------------------------------------------------------------------- */
 /* Macro                                                                      */
@@ -27,6 +28,11 @@
 
 #define CMD_RECV_PRIORITY (1U)
 #define CMD_RECV_STACK_SIZE (configMINIMAL_STACK_SIZE)
+
+#define UART_RECV_BUFF_LENGTH ((size_t)100)
+#define UART_RECV_BUFF_TRIGGER_LEVEL ((BaseType_t)1)
+
+#define NO_DELAY (0U)
 
 /* -------------------------------------------------------------------------- */
 /* Type definition                                                            */
@@ -58,6 +64,8 @@ static StackType_t gUsbdStack[USBD_STACK_SIZE];
 static StackType_t gCdcStack[CDC_STACK_SIZE];
 static StackType_t gCmdRecvStack[CMD_RECV_STACK_SIZE];
 
+static StreamBufferHandle_t gUartRecvBuff = NULL;
+
 /* -------------------------------------------------------------------------- */
 /* Public function                                                            */
 /* -------------------------------------------------------------------------- */
@@ -69,6 +77,10 @@ int main(void)
     /* Initialize LED. */
     gpio_init(LED_PORT);
     gpio_set_dir(LED_PORT, GPIO_OUT);
+
+    /* Initialize UART recv buffer. */
+    gUartRecvBuff = xStreamBufferCreate(UART_RECV_BUFF_LENGTH,
+                                        UART_RECV_BUFF_TRIGGER_LEVEL);
 
     /* Creates a tasks. */
     gHbTaskHndl = xTaskCreateStatic(heartbeatTask, "hb", HEARTBEAT_STACK_SIZE,
@@ -153,11 +165,13 @@ static void cdcTask(void *nouse)
                 uint32_t count = tud_cdc_read(buff, sizeof(buff));
                 (void)count;
 
+                xStreamBufferSend(gUartRecvBuff, buff, count, NO_DELAY);
+
                 /* Echo back. */
-                tud_cdc_write(buff, count);
+                // tud_cdc_write(buff, count);
             }
 
-            tud_cdc_write_flush();
+            // tud_cdc_write_flush();
         }
 
         vTaskDelay(1);
@@ -168,6 +182,9 @@ static void cmdRecvTask(void *nouse)
 {
     while (true)
     {
-        vTaskDelay(1);
+        uint8_t b;
+        xStreamBufferReceive(gUartRecvBuff, &b, 1, portMAX_DELAY );
+        tud_cdc_write(&b, 1);
+        tud_cdc_write_flush();
     }
 }
