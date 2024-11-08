@@ -157,7 +157,8 @@ static void cdcTask(void *nouse)
         if (tud_cdc_connected())
         {
             /* There are data available. */
-            while (tud_cdc_available())
+            while (tud_cdc_available() &&
+                   (xStreamBufferSpacesAvailable(gUartRecvBuff) >= CDC_RECV_LEN))
             {
                 uint8_t buff[CDC_RECV_LEN];
 
